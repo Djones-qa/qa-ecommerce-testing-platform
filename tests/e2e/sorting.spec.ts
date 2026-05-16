@@ -56,7 +56,8 @@ test.describe('Product Sorting', () => {
   test('clicking a product name opens the detail page', async ({ page }) => {
     await page.locator('.inventory_item_name').first().click();
     await expect(page).toHaveURL(/inventory-item/);
-    await expect(page.locator('.inventory_details')).toBeVisible();
+    // Use the specific product detail container, not the ambiguous .inventory_details class
+    await expect(page.locator('.inventory_details_desc_container')).toBeVisible();
   });
 
   test('sort dropdown is present on the inventory page', async ({ page }) => {
