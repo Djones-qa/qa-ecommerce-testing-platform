@@ -3,6 +3,8 @@ import { Browser, BrowserContext, Page, chromium, expect } from '@playwright/tes
 import { LoginPage } from '../../e2e/pages/LoginPage';
 import { InventoryPage } from '../../e2e/pages/InventoryPage';
 
+const BASE_URL = 'https://www.saucedemo.com';
+
 let browser: Browser;
 let context: BrowserContext;
 let page: Page;
@@ -11,7 +13,7 @@ let inventoryPage: InventoryPage;
 
 Before(async () => {
   browser = await chromium.launch({ headless: true });
-  context = await browser.newContext();
+  context = await browser.newContext({ baseURL: BASE_URL });
   page = await context.newPage();
   loginPage = new LoginPage(page);
   inventoryPage = new InventoryPage(page);

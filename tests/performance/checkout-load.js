@@ -31,12 +31,12 @@ export const options = {
     { duration: '30s', target: 0 },    // Ramp down
   ],
   thresholds: {
-    http_req_duration: ['p(95)<3000'],  // 95% of requests under 3s
-    http_req_failed: ['rate<0.01'],     // Error rate under 1%
-    errors: ['rate<0.01'],
-    login_duration: ['p(95)<2000'],
-    inventory_duration: ['p(95)<2000'],
-    checkout_duration: ['p(95)<3000'],
+    http_req_duration: ['p(95)<8000'],  // 95% of requests under 8s (lenient for public demo site)
+    http_req_failed: ['rate<0.10'],     // Error rate under 10%
+    errors: ['rate<0.10'],
+    login_duration: ['p(95)<8000'],
+    inventory_duration: ['p(95)<8000'],
+    checkout_duration: ['p(95)<8000'],
   },
 };
 

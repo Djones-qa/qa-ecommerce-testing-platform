@@ -6,6 +6,8 @@ import { CartPage } from '../../e2e/pages/CartPage';
 import { CheckoutPage } from '../../e2e/pages/CheckoutPage';
 import { OrderConfirmationPage } from '../../e2e/pages/OrderConfirmationPage';
 
+const BASE_URL = 'https://www.saucedemo.com';
+
 let browser: Browser;
 let context: BrowserContext;
 let page: Page;
@@ -16,7 +18,7 @@ let confirmationPage: OrderConfirmationPage;
 
 Before(async () => {
   browser = await chromium.launch({ headless: true });
-  context = await browser.newContext();
+  context = await browser.newContext({ baseURL: BASE_URL });
   page = await context.newPage();
   const loginPage = new LoginPage(page);
   inventoryPage = new InventoryPage(page);
