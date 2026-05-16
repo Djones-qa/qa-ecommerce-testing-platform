@@ -2,9 +2,9 @@ name: QA Test Suite
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main]
+    branches: [master, main]
   schedule:
     # Run full suite nightly at 2am UTC
     - cron: '0 2 * * *'
