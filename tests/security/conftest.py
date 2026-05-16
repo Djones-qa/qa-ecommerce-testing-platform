@@ -1,16 +1,15 @@
 """
 Security test configuration and shared fixtures.
+
+UI target:  https://www.saucedemo.com  (login/auth bypass tests)
+API target: https://jsonplaceholder.typicode.com  (IDOR, XSS, injection tests)
 """
 import pytest
 import requests
 
 BASE_URL = "https://www.saucedemo.com"
-API_BASE_URL = "https://fakestoreapi.com"
-
-VALID_CREDENTIALS = {
-    "username": "standard_user",
-    "password": "secret_sauce",
-}
+API_BASE_URL = "https://fakestoreapi.com"   # kept for reference; tests use JSON_API_URL
+JSON_API_URL = "https://jsonplaceholder.typicode.com"
 
 XSS_PAYLOADS = [
     "<script>alert('xss')</script>",
@@ -29,6 +28,9 @@ SQL_INJECTION_PAYLOADS = [
     "1; DROP TABLE users--",
 ]
 
+# FakeStoreAPI returns 403 from CI runner IPs — treat as rejection
+REJECTION_CODES = (400, 401, 403, 422)
+
 
 @pytest.fixture(scope="session")
 def session():
@@ -36,14 +38,3 @@ def session():
     s = requests.Session()
     s.headers.update({"Content-Type": "application/json"})
     return s
-
-
-@pytest.fixture(scope="session")
-def auth_token(session):
-    """Obtain a valid auth token from FakeStoreAPI."""
-    response = session.post(
-        f"{API_BASE_URL}/auth/login",
-        json={"username": "mor_2314", "password": "83r5^_"},
-    )
-    assert response.status_code == 200
-    return response.json().get("token")

@@ -38,7 +38,13 @@ export class InventoryPage {
   }
 
   async sortBy(option: 'az' | 'za' | 'lohi' | 'hilo') {
+    await this.sortDropdown.waitFor({ state: 'visible' });
     await this.sortDropdown.selectOption(option);
+    // Wait for the inventory list to re-render after sort
+    await this.page.waitForFunction(() => {
+      const items = document.querySelectorAll('.inventory_item');
+      return items.length > 0;
+    });
   }
 
   async getItemNames(): Promise<string[]> {
