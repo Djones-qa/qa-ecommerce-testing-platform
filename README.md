@@ -1,5 +1,15 @@
 # QA E-Commerce Testing Platform
 
+[![QA Test Suite](https://github.com/Djones-qa/qa-ecommerce-testing-platform/actions/workflows/test-matrix.yml/badge.svg)](https://github.com/Djones-qa/qa-ecommerce-testing-platform/actions/workflows/test-matrix.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Playwright](https://img.shields.io/badge/Playwright-1.44-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev)
+[![k6](https://img.shields.io/badge/k6-performance-7d64ff?logo=k6&logoColor=white)](https://k6.io)
+[![Cucumber](https://img.shields.io/badge/Cucumber-BDD-23d96c?logo=cucumber&logoColor=white)](https://cucumber.io)
+[![axe-core](https://img.shields.io/badge/axe--core-WCAG%202.1%20AA-663399)](https://www.deque.com/axe/)
+[![pytest](https://img.shields.io/badge/pytest-security-0a9edc?logo=pytest&logoColor=white)](https://pytest.org)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+
 A production-grade, multi-layer test suite for an e-commerce application. Built to demonstrate a complete test strategy — not just individual test scripts.
 
 **Live targets:** [SauceDemo](https://www.saucedemo.com) (UI) · [FakeStoreAPI](https://fakestoreapi.com) (API)
@@ -32,7 +42,7 @@ A production-grade, multi-layer test suite for an e-commerce application. Built 
 ### Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/qa-ecommerce-testing-platform.git
+git clone https://github.com/Djones-qa/qa-ecommerce-testing-platform.git
 cd qa-ecommerce-testing-platform
 npm install
 npx playwright install --with-deps
@@ -230,3 +240,16 @@ Additional manual checks documented:
 2. Add tests for any new feature or bug fix
 3. Run `npm test` locally before pushing
 4. PRs require the `all-tests-passed` check to be green
+
+---
+
+## Author
+
+**Djones-qa**
+- GitHub: [@Djones-qa](https://github.com/Djones-qa)
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
