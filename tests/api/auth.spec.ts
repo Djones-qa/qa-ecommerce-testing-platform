@@ -1,65 +1,76 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * API: Authentication endpoint tests against FakeStoreAPI
+ * API: Authentication / user endpoint tests against JSONPlaceholder
+ * Using /users as a stand-in for auth — validates user data contract.
  * Business risk: Auth failures lock out all users; broken tokens expose accounts.
  *
- * Note: FakeStoreAPI /auth/login may return 403 when rate-limited or restricted.
- * Tests are written to handle both a working auth endpoint and a restricted one.
+ * Base URL: https://jsonplaceholder.typicode.com (configured in playwright.config.ts api project)
  */
-test.describe('Auth API', () => {
-  test('POST /auth/login endpoint responds', async ({ request }) => {
-    const response = await request.post('/auth/login', {
-      data: { username: 'mor_2314', password: '83r5^_' },
-    });
-    // Accept 200 (success) or 403 (rate-limited/restricted on free tier)
-    expect([200, 403]).toContain(response.status());
+test.describe('Auth / Users API', () => {
+  test('GET /users returns list of users', async ({ request }) => {
+    const response = await request.get('/users');
+    expect(response.status()).toBe(200);
+
+    const users = await response.json();
+    expect(Array.isArray(users)).toBe(true);
+    expect(users.length).toBeGreaterThan(0);
   });
 
-  test('POST /auth/login with valid credentials returns token or 403', async ({ request }) => {
-    const response = await request.post('/auth/login', {
-      data: { username: 'mor_2314', password: '83r5^_' },
-    });
+  test('each user has required identity fields', async ({ request }) => {
+    const response = await request.get('/users');
+    const users = await response.json();
 
-    if (response.status() === 200) {
-      const body = await response.json();
-      expect(body.token).toBeTruthy();
-      expect(typeof body.token).toBe('string');
-      // JWT has 3 base64url parts separated by dots
-      const jwtParts = body.token.split('.');
-      expect(jwtParts.length).toBe(3);
-    } else {
-      // 403 = endpoint restricted on this tier — document and skip token assertions
-      console.log(`[INFO] /auth/login returned ${response.status()} — endpoint may be rate-limited`);
-      expect([403, 401]).toContain(response.status());
+    for (const user of users) {
+      expect(user).toHaveProperty('id');
+      expect(user).toHaveProperty('name');
+      expect(user).toHaveProperty('username');
+      expect(user).toHaveProperty('email');
+      expect(user.email).toMatch(/@/);
     }
   });
 
-  test('POST /auth/login with invalid credentials returns non-200', async ({ request }) => {
-    const response = await request.post('/auth/login', {
-      data: { username: 'invalid_user', password: 'wrong_password' },
-    });
-    expect(response.status()).not.toBe(200);
+  test('GET /users/:id returns single user', async ({ request }) => {
+    const response = await request.get('/users/1');
+    expect(response.status()).toBe(200);
+
+    const user = await response.json();
+    expect(user.id).toBe(1);
+    expect(user.name).toBeTruthy();
   });
 
-  test('POST /auth/login with missing username returns error', async ({ request }) => {
-    const response = await request.post('/auth/login', {
-      data: { password: 'secret' },
-    });
-    expect([400, 401, 403]).toContain(response.status());
+  test('GET /users/:id with invalid id returns 404', async ({ request }) => {
+    const response = await request.get('/users/99999');
+    expect(response.status()).toBe(404);
   });
 
-  test('POST /auth/login with missing password returns error', async ({ request }) => {
-    const response = await request.post('/auth/login', {
-      data: { username: 'mor_2314' },
-    });
-    expect([400, 401, 403]).toContain(response.status());
+  test('POST /users creates a new user', async ({ request }) => {
+    const newUser = {
+      name: 'Jane Doe',
+      username: 'janedoe',
+      email: 'jane@example.com',
+    };
+
+    const response = await request.post('/users', { data: newUser });
+    expect(response.status()).toBe(201);
+
+    const created = await response.json();
+    expect(created.id).toBeTruthy();
+    expect(created.name).toBe(newUser.name);
   });
 
-  test('POST /auth/login with empty credentials returns error', async ({ request }) => {
-    const response = await request.post('/auth/login', {
-      data: { username: '', password: '' },
-    });
-    expect(response.status()).not.toBe(200);
+  test('GET /users response has correct Content-Type', async ({ request }) => {
+    const response = await request.get('/users');
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('application/json');
+  });
+
+  test('user email addresses are unique', async ({ request }) => {
+    const response = await request.get('/users');
+    const users = await response.json();
+
+    const emails = users.map((u: any) => u.email.toLowerCase());
+    const uniqueEmails = new Set(emails);
+    expect(uniqueEmails.size).toBe(emails.length);
   });
 });

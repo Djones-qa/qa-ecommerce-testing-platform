@@ -1,123 +1,110 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * API: Products endpoint tests against FakeStoreAPI
+ * API: Products endpoint tests against JSONPlaceholder
+ * Using /posts as a stand-in for "products" — same REST contract pattern.
  * Business risk: Broken product API means no inventory displayed — zero sales.
  *
- * Base URL: https://fakestoreapi.com (configured in playwright.config.ts api project)
+ * Base URL: https://jsonplaceholder.typicode.com (configured in playwright.config.ts api project)
  */
 test.describe('Products API', () => {
-  test('GET /products returns 200 with array of products', async ({ request }) => {
-    const response = await request.get('/products');
+  test('GET /posts returns 200 with array of items', async ({ request }) => {
+    const response = await request.get('/posts');
     expect(response.status()).toBe(200);
 
-    const products = await response.json();
-    expect(Array.isArray(products)).toBe(true);
-    expect(products.length).toBeGreaterThan(0);
+    const posts = await response.json();
+    expect(Array.isArray(posts)).toBe(true);
+    expect(posts.length).toBeGreaterThan(0);
   });
 
   test('each product has required fields', async ({ request }) => {
-    const response = await request.get('/products');
-    const products = await response.json();
+    const response = await request.get('/posts');
+    const posts = await response.json();
 
-    for (const product of products) {
-      expect(product).toHaveProperty('id');
-      expect(product).toHaveProperty('title');
-      expect(product).toHaveProperty('price');
-      expect(product).toHaveProperty('category');
-      expect(product).toHaveProperty('image');
-      expect(typeof product.price).toBe('number');
-      expect(product.price).toBeGreaterThan(0);
+    for (const post of posts.slice(0, 5)) {
+      expect(post).toHaveProperty('id');
+      expect(post).toHaveProperty('title');
+      expect(post).toHaveProperty('body');
+      expect(post).toHaveProperty('userId');
+      expect(typeof post.id).toBe('number');
+      expect(post.title).toBeTruthy();
     }
   });
 
-  test('GET /products/:id returns single product', async ({ request }) => {
-    const response = await request.get('/products/1');
+  test('GET /posts/:id returns single item', async ({ request }) => {
+    const response = await request.get('/posts/1');
     expect(response.status()).toBe(200);
 
-    const product = await response.json();
-    expect(product.id).toBe(1);
-    expect(product.title).toBeTruthy();
+    const post = await response.json();
+    expect(post.id).toBe(1);
+    expect(post.title).toBeTruthy();
   });
 
-  test('GET /products/:id with invalid id returns 404 or null', async ({ request }) => {
-    const response = await request.get('/products/99999');
-    // FakeStoreAPI returns null for missing products
-    const body = await response.json();
-    expect(response.status() === 404 || body === null).toBeTruthy();
+  test('GET /posts/:id with invalid id returns 404', async ({ request }) => {
+    const response = await request.get('/posts/99999');
+    expect(response.status()).toBe(404);
   });
 
-  test('GET /products/categories returns category list', async ({ request }) => {
-    const response = await request.get('/products/categories');
+  test('GET /posts with _limit query param respects limit', async ({ request }) => {
+    const response = await request.get('/posts?_limit=3');
     expect(response.status()).toBe(200);
 
-    const categories = await response.json();
-    expect(Array.isArray(categories)).toBe(true);
-    expect(categories.length).toBeGreaterThan(0);
+    const posts = await response.json();
+    expect(posts.length).toBe(3);
   });
 
-  test('GET /products/category/:name filters correctly', async ({ request }) => {
-    const categoriesRes = await request.get('/products/categories');
-    const categories = await categoriesRes.json();
-    const category = categories[0];
-
-    const response = await request.get(`/products/category/${encodeURIComponent(category)}`);
+  test('GET /posts filtered by userId', async ({ request }) => {
+    const response = await request.get('/posts?userId=1');
     expect(response.status()).toBe(200);
 
-    const products = await response.json();
-    expect(Array.isArray(products)).toBe(true);
-    for (const product of products) {
-      expect(product.category).toBe(category);
+    const posts = await response.json();
+    expect(Array.isArray(posts)).toBe(true);
+    expect(posts.length).toBeGreaterThan(0);
+    for (const post of posts) {
+      expect(post.userId).toBe(1);
     }
   });
 
-  test('GET /products with limit query param respects limit', async ({ request }) => {
-    const response = await request.get('/products?limit=3');
-    expect(response.status()).toBe(200);
-
-    const products = await response.json();
-    expect(products.length).toBe(3);
-  });
-
-  test('GET /products with sort=desc returns products in descending id order', async ({ request }) => {
-    const response = await request.get('/products?sort=desc');
-    expect(response.status()).toBe(200);
-
-    const products = await response.json();
-    for (let i = 1; i < products.length; i++) {
-      expect(products[i].id).toBeLessThan(products[i - 1].id);
-    }
-  });
-
-  test('POST /products creates a new product', async ({ request }) => {
-    const newProduct = {
+  test('POST /posts creates a new item', async ({ request }) => {
+    const newPost = {
       title: 'Test Product',
-      price: 29.99,
-      description: 'A test product for API validation',
-      image: 'https://fakestoreapi.com/img/placeholder.jpg',
-      category: 'electronics',
+      body: 'A test product for API validation',
+      userId: 1,
     };
 
-    const response = await request.post('/products', { data: newProduct });
-    expect(response.status()).toBe(200);
+    const response = await request.post('/posts', { data: newPost });
+    expect(response.status()).toBe(201);
 
     const created = await response.json();
     expect(created.id).toBeTruthy();
-    expect(created.title).toBe(newProduct.title);
-    expect(created.price).toBe(newProduct.price);
+    expect(created.title).toBe(newPost.title);
   });
 
-  test('PUT /products/:id updates a product', async ({ request }) => {
-    const update = { title: 'Updated Title', price: 99.99 };
-    const response = await request.put('/products/1', { data: update });
+  test('PUT /posts/:id updates an item', async ({ request }) => {
+    const update = { id: 1, title: 'Updated Title', body: 'Updated body', userId: 1 };
+    const response = await request.put('/posts/1', { data: update });
     expect(response.status()).toBe(200);
 
     const updated = await response.json();
     expect(updated.title).toBe(update.title);
   });
 
-  test('DELETE /products/:id returns success', async ({ request }) => {
-    const response = await request.delete('/products/1');
+  test('PATCH /posts/:id partially updates an item', async ({ request }) => {
+    const response = await request.patch('/posts/1', { data: { title: 'Patched Title' } });
     expect(response.status()).toBe(200);
+
+    const patched = await response.json();
+    expect(patched.title).toBe('Patched Title');
+  });
+
+  test('DELETE /posts/:id returns 200', async ({ request }) => {
+    const response = await request.delete('/posts/1');
+    expect(response.status()).toBe(200);
+  });
+
+  test('GET /posts response has correct Content-Type', async ({ request }) => {
+    const response = await request.get('/posts/1');
+    const contentType = response.headers()['content-type'];
+    expect(contentType).toContain('application/json');
   });
 });

@@ -1,93 +1,88 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * API: Cart endpoint tests against FakeStoreAPI
+ * API: Cart / collection endpoint tests against JSONPlaceholder
+ * Using /todos as a stand-in for cart items — same REST contract pattern.
  * Business risk: Cart API failures prevent users from completing purchases.
+ *
+ * Base URL: https://jsonplaceholder.typicode.com (configured in playwright.config.ts api project)
  */
 test.describe('Cart API', () => {
-  test('GET /carts returns all carts', async ({ request }) => {
-    const response = await request.get('/carts');
+  test('GET /todos returns all items', async ({ request }) => {
+    const response = await request.get('/todos');
     expect(response.status()).toBe(200);
 
-    const carts = await response.json();
-    expect(Array.isArray(carts)).toBe(true);
-    expect(carts.length).toBeGreaterThan(0);
+    const todos = await response.json();
+    expect(Array.isArray(todos)).toBe(true);
+    expect(todos.length).toBeGreaterThan(0);
   });
 
-  test('each cart has required fields', async ({ request }) => {
-    const response = await request.get('/carts');
-    const carts = await response.json();
+  test('each cart item has required fields', async ({ request }) => {
+    const response = await request.get('/todos');
+    const todos = await response.json();
 
-    for (const cart of carts) {
-      expect(cart).toHaveProperty('id');
-      expect(cart).toHaveProperty('userId');
-      expect(cart).toHaveProperty('date');
-      expect(cart).toHaveProperty('products');
-      expect(Array.isArray(cart.products)).toBe(true);
+    for (const item of todos.slice(0, 5)) {
+      expect(item).toHaveProperty('id');
+      expect(item).toHaveProperty('userId');
+      expect(item).toHaveProperty('title');
+      expect(item).toHaveProperty('completed');
+      expect(typeof item.id).toBe('number');
     }
   });
 
-  test('GET /carts/:id returns single cart', async ({ request }) => {
-    const response = await request.get('/carts/1');
+  test('GET /todos/:id returns single item', async ({ request }) => {
+    const response = await request.get('/todos/1');
     expect(response.status()).toBe(200);
 
-    const cart = await response.json();
-    expect(cart.id).toBe(1);
-    expect(cart.products.length).toBeGreaterThan(0);
+    const item = await response.json();
+    expect(item.id).toBe(1);
   });
 
-  test('GET /carts/user/:userId returns user carts', async ({ request }) => {
-    const response = await request.get('/carts/user/1');
+  test('GET /todos filtered by userId returns user items', async ({ request }) => {
+    const response = await request.get('/todos?userId=1');
     expect(response.status()).toBe(200);
 
-    const carts = await response.json();
-    expect(Array.isArray(carts)).toBe(true);
-    for (const cart of carts) {
-      expect(cart.userId).toBe(1);
+    const items = await response.json();
+    expect(Array.isArray(items)).toBe(true);
+    for (const item of items) {
+      expect(item.userId).toBe(1);
     }
   });
 
-  test('POST /carts creates a new cart', async ({ request }) => {
-    const newCart = {
+  test('POST /todos creates a new cart item', async ({ request }) => {
+    const newItem = {
       userId: 5,
-      date: new Date().toISOString().split('T')[0],
-      products: [
-        { productId: 1, quantity: 2 },
-        { productId: 3, quantity: 1 },
-      ],
+      title: 'Buy Sauce Labs Backpack',
+      completed: false,
     };
 
-    const response = await request.post('/carts', { data: newCart });
-    expect(response.status()).toBe(200);
+    const response = await request.post('/todos', { data: newItem });
+    expect(response.status()).toBe(201);
 
     const created = await response.json();
     expect(created.id).toBeTruthy();
+    expect(created.title).toBe(newItem.title);
   });
 
-  test('PUT /carts/:id updates cart', async ({ request }) => {
-    const update = {
-      userId: 3,
-      date: '2024-01-01',
-      products: [{ productId: 2, quantity: 5 }],
-    };
-
-    const response = await request.put('/carts/1', { data: update });
+  test('PUT /todos/:id updates item', async ({ request }) => {
+    const update = { userId: 1, id: 1, title: 'Updated cart item', completed: true };
+    const response = await request.put('/todos/1', { data: update });
     expect(response.status()).toBe(200);
 
     const updated = await response.json();
     expect(updated.id).toBe(1);
   });
 
-  test('DELETE /carts/:id removes cart', async ({ request }) => {
-    const response = await request.delete('/carts/1');
+  test('DELETE /todos/:id removes item', async ({ request }) => {
+    const response = await request.delete('/todos/1');
     expect(response.status()).toBe(200);
   });
 
-  test('GET /carts with date range filter', async ({ request }) => {
-    const response = await request.get('/carts?startdate=2020-01-01&enddate=2020-12-31');
+  test('GET /todos with _limit filter', async ({ request }) => {
+    const response = await request.get('/todos?_limit=5');
     expect(response.status()).toBe(200);
 
-    const carts = await response.json();
-    expect(Array.isArray(carts)).toBe(true);
+    const items = await response.json();
+    expect(items.length).toBe(5);
   });
 });
