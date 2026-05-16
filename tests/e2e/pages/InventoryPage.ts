@@ -38,9 +38,8 @@ export class InventoryPage {
   }
 
   async sortBy(option: 'az' | 'za' | 'lohi' | 'hilo') {
-    await this.sortDropdown.waitFor({ state: 'visible', timeout: 30000 });
     await this.sortDropdown.selectOption(option);
-    // Wait for items to re-render — more reliable than waitForFunction on CI
+    // Wait for items to confirm the sort re-render completed
     await this.page.waitForSelector('.inventory_item', { timeout: 30000 });
   }
 
