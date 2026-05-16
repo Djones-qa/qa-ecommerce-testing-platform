@@ -1,0 +1,257 @@
+name: QA Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run full suite nightly at 2am UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # E2E Tests — matrix across browsers
+  # ─────────────────────────────────────────────
+  e2e:
+    name: E2E (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, mobile-chrome]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser == 'mobile-chrome' && 'chromium' || matrix.browser }}
+
+      - name: Run E2E tests
+        run: npx playwright test tests/e2e --project=${{ matrix.browser }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # API Tests
+  # ─────────────────────────────────────────────
+  api:
+    name: API Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run API tests
+        run: npx playwright test tests/api --project=api
+
+      - name: Upload API test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-report
+          path: playwright-report/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # Accessibility Tests
+  # ─────────────────────────────────────────────
+  accessibility:
+    name: Accessibility (WCAG 2.1 AA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run accessibility tests
+        run: npx playwright test tests/accessibility --project=chromium
+
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: playwright-report/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # Visual Regression Tests
+  # ─────────────────────────────────────────────
+  visual:
+    name: Visual Regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run visual regression tests
+        run: npx playwright test tests/visual --project=chromium
+        continue-on-error: true  # First run generates baselines
+
+      - name: Upload visual diff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: |
+            playwright-report/
+            tests/visual/snapshots/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # BDD Tests
+  # ─────────────────────────────────────────────
+  bdd:
+    name: BDD (Cucumber)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run BDD tests
+        run: npm run test:bdd
+
+      - name: Upload Cucumber report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report
+          path: cucumber-report/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # Security Tests
+  # ─────────────────────────────────────────────
+  security:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: pip install -r tests/security/requirements.txt
+
+      - name: Run security tests
+        run: pytest tests/security/ -v --html=security-report/report.html --self-contained-html
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # Performance Tests (smoke only in CI)
+  # ─────────────────────────────────────────────
+  performance:
+    name: Performance (Smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run smoke performance test
+        run: k6 run tests/performance/smoke-test.js
+
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: tests/performance/results/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # Summary job — requires all layers to pass
+  # ─────────────────────────────────────────────
+  all-tests-passed:
+    name: All Tests Passed
+    runs-on: ubuntu-latest
+    needs: [e2e, api, accessibility, bdd, security, performance]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.e2e.result }}" != "success" ]]; then echo "E2E failed" && exit 1; fi
+          if [[ "${{ needs.api.result }}" != "success" ]]; then echo "API failed" && exit 1; fi
+          if [[ "${{ needs.accessibility.result }}" != "success" ]]; then echo "Accessibility failed" && exit 1; fi
+          if [[ "${{ needs.bdd.result }}" != "success" ]]; then echo "BDD failed" && exit 1; fi
+          if [[ "${{ needs.security.result }}" != "success" ]]; then echo "Security failed" && exit 1; fi
+          if [[ "${{ needs.performance.result }}" != "success" ]]; then echo "Performance failed" && exit 1; fi
+          echo "All test layers passed!"

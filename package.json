@@ -1,0 +1,24 @@
+{
+  "name": "qa-ecommerce-testing-platform",
+  "version": "1.0.0",
+  "description": "Multi-layer test suite for e-commerce: E2E, API, Performance, Accessibility, Visual, Security, BDD",
+  "scripts": {
+    "test": "npm run test:e2e && npm run test:api && npm run test:accessibility && npm run test:visual && npm run test:bdd",
+    "test:e2e": "playwright test tests/e2e --reporter=html",
+    "test:api": "playwright test tests/api --reporter=html",
+    "test:accessibility": "playwright test tests/accessibility --reporter=html",
+    "test:visual": "playwright test tests/visual --reporter=html",
+    "test:bdd": "cucumber-js",
+    "test:performance": "k6 run tests/performance/checkout-load.js",
+    "test:security": "pytest tests/security/ -v",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.9.1",
+    "@cucumber/cucumber": "^10.3.1",
+    "@playwright/test": "^1.44.0",
+    "axe-core": "^4.9.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}

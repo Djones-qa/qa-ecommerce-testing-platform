@@ -1,0 +1,13 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+cucumber-report/
+security-report/
+tests/performance/results/
+tests/visual/snapshots/
+*.pyc
+__pycache__/
+.pytest_cache/
+.env
+.env.local
