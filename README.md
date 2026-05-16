@@ -1,6 +1,6 @@
 # QA E-Commerce Testing Platform
 
-[![QA Test Suite](https://github.com/Djones-qa/qa-ecommerce-testing-platform/actions/workflows/test-matrix.yml/badge.svg)](https://github.com/Djones-qa/qa-ecommerce-testing-platform/actions/workflows/test-matrix.yml)
+[![QA Test Suite](https://github.com/Djones-qa/qa-ecommerce-testing-platform/actions/workflows/test-matrix.yml/badge.svg?branch=master)](https://github.com/Djones-qa/qa-ecommerce-testing-platform/actions/workflows/test-matrix.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Playwright](https://img.shields.io/badge/Playwright-1.44-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev)
 [![k6](https://img.shields.io/badge/k6-performance-7d64ff?logo=k6&logoColor=white)](https://k6.io)
@@ -247,6 +247,7 @@ Additional manual checks documented:
 
 **Djones-qa**
 - GitHub: [@Djones-qa](https://github.com/Djones-qa)
+- LinkedIn: [Darrius Jones](https://www.linkedin.com/in/darrius-jones-28226b350/)
 
 ---
 
